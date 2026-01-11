@@ -16,32 +16,44 @@
 
     <script src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
+    <script src="https://code.createjs.com/1.0.0/easeljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
+    <script src="https://static.robotwebtools.org/ros2djs/current/ros2d.min.js"></script>
 </head>
 <body>
 
     <div class="d-flex justify-content-between status-bar">
         <span id="connection-status" class="text-danger">● Disconnected</span>
+        <span class="font-weight-bold">OPPORTUNITY ROVER</span>
         <span>Battery: <span id="battery-level">--</span> V</span>
     </div>
 
-    <div id="video-container">
-        <img id="video-stream" src="" alt="Waiting for Video...">
-    </div>
+    <div class="container-fluid mt-2">
+        <div class="row">
+            <div class="col-lg-6 col-md-12 mb-2">
+                <div id="video-container" style="background: #000; height: 300px; line-height: 300px;">
+                     <img id="video-stream" src="" alt="Video Feed" style="max-height: 100%; max-width: 100%;">
+                </div>
+            </div>
 
-    <div class="container-fluid">
+            <div class="col-lg-6 col-md-12 mb-2">
+                <div id="map-container" style="background: #111; height: 300px; border: 1px solid #444;">
+                    </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-6 btn-panel">
-                <h5>Arm Control</h5>
-                <button class="btn btn-primary btn-block mb-2" onclick="sendCmd('HOME')">Deploy (Home)</button>
-                <button class="btn btn-warning btn-block mb-2" onclick="sendCmd('STOW')">Stow (Drive)</button>
+                <button class="btn btn-sm btn-primary btn-block mb-1" onclick="sendCmd('HOME')">Deploy</button>
+                <button class="btn btn-sm btn-warning btn-block mb-1" onclick="sendCmd('STOW')">Stow</button>
                 <div class="row">
-                    <div class="col-6"><button class="btn btn-success btn-block" onclick="sendCmd('OPEN')">Open</button></div>
-                    <div class="col-6"><button class="btn btn-danger btn-block" onclick="sendCmd('CLOSE')">Grab</button></div>
+                    <div class="col-6"><button class="btn btn-sm btn-success btn-block" onclick="sendCmd('OPEN')">Open</button></div>
+                    <div class="col-6"><button class="btn btn-sm btn-danger btn-block" onclick="sendCmd('CLOSE')">Grab</button></div>
                 </div>
             </div>
             
             <div class="col-6">
-                <div id="joystick-zone"></div>
+                <div id="joystick-zone" style="height: 150px; position: relative;"></div>
             </div>
         </div>
     </div>
