@@ -1,1 +1,8 @@
-
+global_costmap:
+  global_frame: map
+  robot_base_frame: base_link
+  update_frequency: 1.0
+  publish_frequency: 0.5
+  static_map: true  # Set to 'false' if you are doing SLAM (mapping while moving)
+  width: 20.0       # Only used if static_map is false
+  height: 20.0
