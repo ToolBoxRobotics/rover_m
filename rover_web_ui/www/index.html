@@ -1,1 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Opportunity Rover Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    
+    <style>
+        body { background-color: #222; color: white; overflow: hidden; }
+        #video-container { position: relative; width: 100%; height: 60vh; background: #000; text-align: center; }
+        #video-stream { height: 100%; max-width: 100%; }
+        #joystick-zone { position: absolute; bottom: 20px; right: 20px; width: 150px; height: 150px; z-index: 10; }
+        .btn-panel { padding: 20px; }
+        .status-bar { background: #333; padding: 5px; font-size: 0.9em; }
+    </style>
 
+    <script src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
+</head>
+<body>
+
+    <div class="d-flex justify-content-between status-bar">
+        <span id="connection-status" class="text-danger">● Disconnected</span>
+        <span>Battery: <span id="battery-level">--</span> V</span>
+    </div>
+
+    <div id="video-container">
+        <img id="video-stream" src="" alt="Waiting for Video...">
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-6 btn-panel">
+                <h5>Arm Control</h5>
+                <button class="btn btn-primary btn-block mb-2" onclick="sendCmd('HOME')">Deploy (Home)</button>
+                <button class="btn btn-warning btn-block mb-2" onclick="sendCmd('STOW')">Stow (Drive)</button>
+                <div class="row">
+                    <div class="col-6"><button class="btn btn-success btn-block" onclick="sendCmd('OPEN')">Open</button></div>
+                    <div class="col-6"><button class="btn btn-danger btn-block" onclick="sendCmd('CLOSE')">Grab</button></div>
+                </div>
+            </div>
+            
+            <div class="col-6">
+                <div id="joystick-zone"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // --- CONFIGURATION ---
+        // AUTOMATICALLY DETECT IP or set manually like '192.168.1.105'
+        var robot_ip = window.location.hostname; 
+        
+        // 1. SET VIDEO SOURCE
+        document.getElementById("video-stream").src = "http://" + robot_ip + ":8080/stream?topic=/camera/rgb/image_color&quality=50";
+
+        // 2. CONNECT TO ROS
+        var ros = new ROSLIB.Ros({
+            url : 'ws://' + robot_ip + ':9090'
+        });
+
+        ros.on('connection', function() {
+            document.getElementById("connection-status").innerHTML = '<span class="text-success">● Online</span>';
+            document.getElementById("connection-status").className = "";
+        });
+
+        ros.on('error', function(error) {
+            document.getElementById("connection-status").innerHTML = '<span class="text-danger">● Error</span>';
+        });
+
+        // 3. TELEMETRY SUBSCRIBER
+        var batListener = new ROSLIB.Topic({
+            ros : ros,
+            name : '/battery', // Ensure Arduino publishes this!
+            messageType : 'std_msgs/Float32'
+        });
+
+        batListener.subscribe(function(message) {
+            document.getElementById("battery-level").innerText = message.data.toFixed(1);
+        });
+
+        // 4. ARM COMMAND PUBLISHER
+        var armCmd = new ROSLIB.Topic({
+            ros : ros,
+            name : '/web/command',
+            messageType : 'std_msgs/String'
+        });
+
+        function sendCmd(action) {
+            var msg = new ROSLIB.Message({ data: action });
+            armCmd.publish(msg);
+        }
+
+        // 5. JOYSTICK (DRIVE)
+        var cmdVel = new ROSLIB.Topic({
+            ros : ros,
+            name : '/cmd_vel',
+            messageType : 'geometry_msgs/Twist'
+        });
+
+        var manager = nipplejs.create({
+            zone: document.getElementById('joystick-zone'),
+            mode: 'static',
+            position: {left: '50%', top: '50%'},
+            color: 'white'
+        });
+
+        var twist = new ROSLIB.Message({
+            linear : { x : 0.0, y : 0.0, z : 0.0 },
+            angular : { x : 0.0, y : 0.0, z : 0.0 }
+        });
+
+        manager.on('move', function (evt, data) {
+            // Convert Joystick Polar coords to Twist
+            // Distance (0-50) -> Linear Speed
+            // Angle -> Angular Speed
+            
+            var max_speed = 0.5; // m/s
+            var max_turn = 1.0;  // rad/s
+            
+            // Normalize force (0.0 to 1.0)
+            var force = Math.min(data.force, 2.0) / 2.0;
+            
+            // Trigonometry to extract forward/turn components
+            var angle_rad = data.angle.radian;
+            
+            // Simple mapping
+            twist.linear.x = Math.sin(angle_rad) * force * max_speed;
+            twist.angular.z = -Math.cos(angle_rad) * force * max_turn;
+
+            cmdVel.publish(twist);
+        });
+
+        manager.on('end', function () {
+            twist.linear.x = 0;
+            twist.angular.z = 0;
+            cmdVel.publish(twist);
+        });
+
+    </script>
+</body>
+</html>
