@@ -1,1 +1,11 @@
+# Axes mapping (Standard Xbox Controller)
+axis_linear: 1  # Left Stick Up/Down
+axis_angular: 3 # Right Stick Left/Right (or 0 for Left Stick)
+scale_linear: 0.5  # Max speed m/s
+scale_angular: 1.0 # Max turn rad/s
 
+# Safety Button (Deadman switch)
+# Robot only moves while this button is held down
+enable_button: 4 # Left Bumper (LB)
+enable_turbo_button: 5 # Right Bumper (RB) - Turbo mode
+scale_linear_turbo: 1.0
