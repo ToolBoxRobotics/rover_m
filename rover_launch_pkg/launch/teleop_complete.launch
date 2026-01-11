@@ -1,1 +1,19 @@
+<launch>
+  <node pkg="joy" type="joy_node" name="joy_node">
+    <param name="dev" value="/dev/input/js0" />
+    <param name="deadzone" value="0.1" />
+    <param name="autorepeat_rate" value="20" />
+  </node>
 
+  <node pkg="teleop_twist_joy" type="teleop_node" name="teleop_twist_joy">
+    <rosparam command="load" file="$(find rover_nav_pkg)/config/xbox_drive.yaml" />
+    <remap from="cmd_vel" to="/cmd_vel" /> 
+  </node>
+
+  <node pkg="rover_arm_pkg" type="joy_arm_commander.py" name="joy_arm_commander" output="screen"/>
+
+  <node pkg="web_video_server" type="web_video_server" name="web_video_server">
+    <param name="port" value="8080" />
+  </node>
+
+</launch>
