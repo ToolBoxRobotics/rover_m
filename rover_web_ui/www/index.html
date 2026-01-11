@@ -1,97 +1,170 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Opportunity Rover Control</title>
+    <title>Opportunity Rover Mission Control</title>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
-        body { background-color: #222; color: white; overflow: hidden; }
-        #video-container { position: relative; width: 100%; height: 60vh; background: #000; text-align: center; }
-        #video-stream { height: 100%; max-width: 100%; }
-        #joystick-zone { position: absolute; bottom: 20px; right: 20px; width: 150px; height: 150px; z-index: 10; }
-        .btn-panel { padding: 20px; }
-        .status-bar { background: #333; padding: 5px; font-size: 0.9em; }
+        body { background-color: #1a1a1a; color: #e0e0e0; overflow-x: hidden; }
+        
+        /* Containers */
+        .visual-container { 
+            background: #000; 
+            border: 1px solid #333; 
+            height: 350px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 5px;
+        }
+        
+        /* Video & Map Elements */
+        #video-stream { max-height: 100%; max-width: 100%; object-fit: contain; }
+        #map-canvas { width: 100%; height: 100%; }
+        
+        /* Joystick Zone */
+        #joystick-zone { 
+            height: 200px; 
+            background: #222; 
+            border-radius: 10px; 
+            position: relative; 
+            border: 1px dashed #444;
+        }
+        
+        /* Status Bar */
+        .status-bar { background: #000; padding: 10px; margin-bottom: 15px; border-bottom: 2px solid #d4af37; }
+        .rover-name { color: #d4af37; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        
+        /* Buttons */
+        .btn-custom { border-radius: 0; font-weight: 600; }
     </style>
 
     <script src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.7.3/nipplejs.min.js"></script>
+    
     <script src="https://code.createjs.com/1.0.0/easeljs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/eventemitter2@6.4.9/lib/eventemitter2.min.js"></script>
     <script src="https://static.robotwebtools.org/ros2djs/current/ros2d.min.js"></script>
 </head>
+
 <body>
 
-    <div class="d-flex justify-content-between status-bar">
-        <span id="connection-status" class="text-danger">● Disconnected</span>
-        <span class="font-weight-bold">OPPORTUNITY ROVER</span>
-        <span>Battery: <span id="battery-level">--</span> V</span>
+    <div class="d-flex justify-content-between align-items-center status-bar">
+        <div>
+            <span id="connection-status" class="badge badge-danger">OFFLINE</span>
+        </div>
+        <div class="rover-name">OPPORTUNITY II</div>
+        <div>
+            <strong>BAT:</strong> <span id="battery-level" class="text-warning">--</span> V
+        </div>
     </div>
 
-    <div class="container-fluid mt-2">
-        <div class="row">
+    <div class="container-fluid">
+        
+        <div class="row mb-3">
             <div class="col-lg-6 col-md-12 mb-2">
-                <div id="video-container" style="background: #000; height: 300px; line-height: 300px;">
-                     <img id="video-stream" src="" alt="Video Feed" style="max-height: 100%; max-width: 100%;">
+                <h6 class="text-uppercase text-muted">Optical Feed</h6>
+                <div class="visual-container">
+                    <img id="video-stream" src="" alt="NO SIGNAL">
                 </div>
             </div>
 
             <div class="col-lg-6 col-md-12 mb-2">
-                <div id="map-container" style="background: #111; height: 300px; border: 1px solid #444;">
+                <h6 class="text-uppercase text-muted">Lidar Navigation Map</h6>
+                <div class="visual-container" id="map-container">
                     </div>
             </div>
         </div>
 
         <div class="row">
-            <div class="col-6 btn-panel">
-                <button class="btn btn-sm btn-primary btn-block mb-1" onclick="sendCmd('HOME')">Deploy</button>
-                <button class="btn btn-sm btn-warning btn-block mb-1" onclick="sendCmd('STOW')">Stow</button>
-                <div class="row">
-                    <div class="col-6"><button class="btn btn-sm btn-success btn-block" onclick="sendCmd('OPEN')">Open</button></div>
-                    <div class="col-6"><button class="btn btn-sm btn-danger btn-block" onclick="sendCmd('CLOSE')">Grab</button></div>
+            
+            <div class="col-md-6 mb-3">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header text-white border-secondary">ROBOTIC ARM</div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <button class="btn btn-primary btn-block btn-custom mb-2" onclick="sendCmd('HOME')">DEPLOY (HOME)</button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-warning btn-block btn-custom mb-2" onclick="sendCmd('STOW')">STOW (DRIVE)</button>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <button class="btn btn-success btn-block btn-custom" onclick="sendCmd('OPEN')">GRIPPER OPEN</button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-danger btn-block btn-custom" onclick="sendCmd('CLOSE')">GRIPPER CLOSE</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="col-6">
-                <div id="joystick-zone" style="height: 150px; position: relative;"></div>
+
+            <div class="col-md-6 mb-3">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-header text-white border-secondary">MANUAL DRIVE</div>
+                    <div class="card-body">
+                        <div id="joystick-zone"></div>
+                        <small class="text-muted d-block text-center mt-1">Drag to Move • Release to Stop</small>
+                    </div>
+                </div>
             </div>
+
         </div>
     </div>
 
     <script type="text/javascript">
         // --- CONFIGURATION ---
-        // AUTOMATICALLY DETECT IP or set manually like '192.168.1.105'
-        var robot_ip = window.location.hostname; 
-        
-        // 1. SET VIDEO SOURCE
+        var robot_ip = window.location.hostname; // Auto-detect IP
+        // var robot_ip = "192.168.1.100"; // Uncomment to hardcode if needed
+
+        // --- VIDEO SETUP ---
+        // Point to the web_video_server stream
         document.getElementById("video-stream").src = "http://" + robot_ip + ":8080/stream?topic=/camera/rgb/image_color&quality=50";
 
-        // 2. CONNECT TO ROS
+        // --- ROS CONNECTION ---
         var ros = new ROSLIB.Ros({
             url : 'ws://' + robot_ip + ':9090'
         });
 
         ros.on('connection', function() {
-            document.getElementById("connection-status").innerHTML = '<span class="text-success">● Online</span>';
-            document.getElementById("connection-status").className = "";
+            var badge = document.getElementById("connection-status");
+            badge.className = "badge badge-success";
+            badge.innerHTML = "ONLINE";
+            console.log('Connected to websocket server.');
         });
 
         ros.on('error', function(error) {
-            document.getElementById("connection-status").innerHTML = '<span class="text-danger">● Error</span>';
+            var badge = document.getElementById("connection-status");
+            badge.className = "badge badge-danger";
+            badge.innerHTML = "ERROR";
+            console.log('Error connecting to websocket server: ', error);
         });
 
-        // 3. TELEMETRY SUBSCRIBER
+        ros.on('close', function() {
+            var badge = document.getElementById("connection-status");
+            badge.className = "badge badge-warning";
+            badge.innerHTML = "CLOSED";
+            console.log('Connection to websocket server closed.');
+        });
+
+        // --- TELEMETRY (Battery) ---
         var batListener = new ROSLIB.Topic({
             ros : ros,
-            name : '/battery', // Ensure Arduino publishes this!
-            messageType : 'std_msgs/Float32'
+            name : '/battery', 
+            messageType : 'std_msgs/Float32' // Ensure Arduino publishes Float32
         });
 
         batListener.subscribe(function(message) {
-            document.getElementById("battery-level").innerText = message.data.toFixed(1);
+            document.getElementById("battery-level").innerText = parseFloat(message.data).toFixed(1);
         });
 
-        // 4. ARM COMMAND PUBLISHER
+        // --- ARM COMMANDS ---
         var armCmd = new ROSLIB.Topic({
             ros : ros,
             name : '/web/command',
@@ -101,20 +174,53 @@
         function sendCmd(action) {
             var msg = new ROSLIB.Message({ data: action });
             armCmd.publish(msg);
+            console.log("Sent Command: " + action);
         }
 
-        // 5. JOYSTICK (DRIVE)
+        // --- MAP VISUALIZATION (ROS2D) ---
+        // 1. Create Viewer
+        var viewer = new ROS2D.Viewer({
+            divID : 'map-container',
+            width : document.getElementById('map-container').clientWidth,
+            height : 350, // Matches CSS height
+            background : '#000000'
+        });
+
+        // 2. Setup Grid Client
+        var gridClient = new ROS2D.OccupancyGridClient({
+            ros : ros,
+            rootObject : viewer.scene,
+            topic : '/map',
+            continuous : true // Listen for SLAM updates
+        });
+
+        // 3. Scale Map on Load
+        gridClient.on('change', function(){
+            // Scale map to fit the container
+            viewer.scaleToDimensions(gridClient.currentGrid.width, gridClient.currentGrid.height);
+            // Center the view on the robot/map center
+            viewer.shift(gridClient.currentGrid.pose.position.x, gridClient.currentGrid.pose.position.y);
+        });
+
+        // Responsive Map Resize
+        window.addEventListener('resize', function() {
+            var container = document.getElementById('map-container');
+            viewer.resize(container.clientWidth, 350);
+        });
+
+        // --- JOYSTICK DRIVE (Nipple.js) ---
         var cmdVel = new ROSLIB.Topic({
             ros : ros,
             name : '/cmd_vel',
             messageType : 'geometry_msgs/Twist'
         });
 
-        var manager = nipplejs.create({
+        var joystickManager = nipplejs.create({
             zone: document.getElementById('joystick-zone'),
             mode: 'static',
             position: {left: '50%', top: '50%'},
-            color: 'white'
+            color: '#d4af37', // Gold color
+            size: 150
         });
 
         var twist = new ROSLIB.Message({
@@ -122,28 +228,23 @@
             angular : { x : 0.0, y : 0.0, z : 0.0 }
         });
 
-        manager.on('move', function (evt, data) {
-            // Convert Joystick Polar coords to Twist
-            // Distance (0-50) -> Linear Speed
-            // Angle -> Angular Speed
-            
-            var max_speed = 0.5; // m/s
-            var max_turn = 1.0;  // rad/s
+        var moveTimer = null;
+
+        joystickManager.on('move', function (evt, data) {
+            var max_linear = 0.5; // m/s
+            var max_angular = 1.0; // rad/s
             
             // Normalize force (0.0 to 1.0)
             var force = Math.min(data.force, 2.0) / 2.0;
+            var angle = data.angle.radian;
             
-            // Trigonometry to extract forward/turn components
-            var angle_rad = data.angle.radian;
+            twist.linear.x = Math.sin(angle) * force * max_linear;
+            twist.angular.z = -Math.cos(angle) * force * max_angular;
             
-            // Simple mapping
-            twist.linear.x = Math.sin(angle_rad) * force * max_speed;
-            twist.angular.z = -Math.cos(angle_rad) * force * max_turn;
-
             cmdVel.publish(twist);
         });
 
-        manager.on('end', function () {
+        joystickManager.on('end', function () {
             twist.linear.x = 0;
             twist.angular.z = 0;
             cmdVel.publish(twist);
