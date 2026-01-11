@@ -75,7 +75,7 @@ class RoverMissionCommander:
         self.hand_group.go(wait=True)
         rospy.sleep(1.0) # Wait for servo
 
-    def perform_grasp_sequence(self):
+    def perform_grasp_sequence(self, target_x, target_y):
         """ 
         Blind Grasp Sequence:
         1. Open Gripper
