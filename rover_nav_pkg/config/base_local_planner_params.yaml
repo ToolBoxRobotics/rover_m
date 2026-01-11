@@ -1,0 +1,28 @@
+DWAPlannerROS:
+  # Robot Configuration Parameters
+  max_vel_x: 0.5  # Meters/sec (Adjust based on your motor gearing)
+  min_vel_x: -0.2
+
+  max_vel_y: 0.0  # 0.0 for non-holonomic (can't strafe sideways)
+  min_vel_y: 0.0
+
+  max_vel_trans: 0.5
+  min_vel_trans: 0.1
+
+  max_vel_theta: 1.0 # Radians/sec
+  min_vel_theta: 0.4
+
+  acc_lim_x: 1.5
+  acc_lim_theta: 2.0
+  acc_lim_y: 0.0
+
+  # Goal Tolerance Parameters
+  yaw_goal_tolerance: 0.1
+  xy_goal_tolerance: 0.15
+  latch_xy_goal_tolerance: false
+
+  # Forward Simulation Parameters
+  sim_time: 1.7
+  vx_samples: 3
+  vy_samples: 1
+  vtheta_samples: 20
