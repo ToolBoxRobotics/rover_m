@@ -1,1 +1,13 @@
+<launch>
+  <node pkg="rosserial_python" type="serial_node.py" name="arm_arduino_node">
+    <param name="port" value="/dev/ttyUSB1"/> <param name="baud" value="57600"/>
+  </node>
 
+  <node pkg="rover_arm_pkg" type="arm_bridge.py" name="arm_bridge" output="screen"/>
+
+  <include file="$(find rover_arm_moveit_config)/launch/move_group.launch">
+    <arg name="allow_trajectory_execution" value="true"/>
+    <arg name="moveit_controller_manager" value="simple"/> 
+  </include>
+
+  </launch>
